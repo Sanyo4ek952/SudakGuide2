@@ -1,10 +1,9 @@
 'use server';
 
 import { z } from 'zod';
-import { prisma } from '@/shared/lib';
+import { prisma, requireCurrentRole } from '@/shared/lib';
 
 const hostListingSchema = z.object({
-  hostId: z.string().min(1),
   listingId: z.string().optional(),
   title: z.string().min(3),
   address: z.string().min(3),
@@ -20,14 +19,14 @@ const hostListingSchema = z.object({
 });
 
 export async function createListingDraftAction(raw: FormData) {
+  const access = await requireCurrentRole('HOST');
+  if (!access.ok) {
+    return { ok: false, message: access.message } as const;
+  }
+
   const parsed = hostListingSchema.safeParse(Object.fromEntries(raw.entries()));
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten() } as const;
-  }
-
-  const host = await prisma.user.findUnique({ where: { id: parsed.data.hostId } });
-  if (!host || host.role !== 'HOST') {
-    return { ok: false, message: 'Недостаточно прав' } as const;
   }
 
   const listing = await prisma.listing.create({
@@ -43,7 +42,7 @@ export async function createListingDraftAction(raw: FormData) {
       rules: parsed.data.rules,
       checkInTime: parsed.data.checkInTime,
       checkOutTime: parsed.data.checkOutTime,
-      ownerId: parsed.data.hostId,
+      ownerId: access.user.id,
       status: 'DRAFT'
     }
   });
@@ -52,13 +51,18 @@ export async function createListingDraftAction(raw: FormData) {
 }
 
 export async function updateListingDraftAction(raw: FormData) {
+  const access = await requireCurrentRole('HOST');
+  if (!access.ok) {
+    return { ok: false, message: access.message } as const;
+  }
+
   const parsed = hostListingSchema.safeParse(Object.fromEntries(raw.entries()));
   if (!parsed.success || !parsed.data.listingId) {
     return { ok: false, errors: parsed.success ? undefined : parsed.error.flatten(), message: 'listingId is required' } as const;
   }
 
   const listing = await prisma.listing.findUnique({ where: { id: parsed.data.listingId } });
-  if (!listing || listing.ownerId !== parsed.data.hostId) {
+  if (!listing || listing.ownerId !== access.user.id) {
     return { ok: false, message: 'Недостаточно прав' } as const;
   }
 
@@ -83,7 +87,11 @@ export async function updateListingDraftAction(raw: FormData) {
 }
 
 export async function submitListingForReviewAction(raw: FormData) {
-  const hostId = String(raw.get('hostId') ?? '');
+  const access = await requireCurrentRole('HOST');
+  if (!access.ok) {
+    return { ok: false, message: access.message } as const;
+  }
+
   const listingId = String(raw.get('listingId') ?? '');
 
   const listing = await prisma.listing.findUnique({
@@ -91,7 +99,7 @@ export async function submitListingForReviewAction(raw: FormData) {
     include: { photos: true }
   });
 
-  if (!listing || listing.ownerId !== hostId) {
+  if (!listing || listing.ownerId !== access.user.id) {
     return { ok: false, message: 'Недостаточно прав' } as const;
   }
 

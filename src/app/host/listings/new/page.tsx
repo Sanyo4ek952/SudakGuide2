@@ -1,16 +1,13 @@
 import { listingFeature } from '@/features';
-import { requireRole } from '@/shared/lib';
+import { requireCurrentRole } from '@/shared/lib';
 
-export default async function HostNewListingPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const query = await searchParams;
-  const hostId = typeof query.hostId === 'string' ? query.hostId : '';
-
-  const roleCheck = await requireRole(hostId, 'HOST');
-  if (!roleCheck.ok) {
+export default async function HostNewListingPage() {
+  const access = await requireCurrentRole('HOST');
+  if (!access.ok) {
     return (
       <main className="mx-auto max-w-5xl px-6 py-10">
         <h1 className="text-2xl font-semibold">Создать объект</h1>
-        <p className="mt-2 text-rose-700">{roleCheck.message}</p>
+        <p className="mt-2 text-rose-700">{access.message}</p>
       </main>
     );
   }
@@ -18,10 +15,8 @@ export default async function HostNewListingPage({ searchParams }: { searchParam
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
       <h1 className="text-2xl font-semibold">Создать объект</h1>
-      <p className="mt-2 text-slate-600">Для MVP передайте hostId через query параметр.</p>
 
       <form className="mt-6 grid gap-3" action={listingFeature.createListingDraftAction}>
-        <input type="hidden" name="hostId" value={hostId} />
         <input name="title" placeholder="Название" className="rounded border p-2" required />
         <input name="address" placeholder="Адрес" className="rounded border p-2" required />
         <input name="district" placeholder="Район" className="rounded border p-2" required />

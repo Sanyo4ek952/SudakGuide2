@@ -1,4 +1,5 @@
 import { bookingFeature, listingFeature } from '@/features';
+import { getCurrentUser } from '@/shared/lib';
 
 export default async function ListingDetailsPage({
   params,
@@ -10,6 +11,7 @@ export default async function ListingDetailsPage({
   const { id } = await params;
   const query = await searchParams;
   const listing = await listingFeature.getPublishedListingById(id);
+  const currentUser = await getCurrentUser();
 
   if (!listing) {
     return (
@@ -65,11 +67,10 @@ export default async function ListingDetailsPage({
 
         <form className="mt-4 grid gap-3" action={bookingFeature.createBookingRequestAction}>
           <input type="hidden" name="listingId" value={listing.id} />
-          <input type="text" name="userId" placeholder="User ID (до полной интеграции с сессией)" className="rounded border p-2" required />
-          <input type="date" name="dateFrom" className="rounded border p-2" required />
+                    <input type="date" name="dateFrom" className="rounded border p-2" required />
           <input type="date" name="dateTo" className="rounded border p-2" required />
-          <button className="rounded bg-blue-700 px-4 py-2 text-white" type="submit">Отправить заявку</button>
-          <p className="text-xs text-slate-500">Для MVP укажите userId вручную.</p>
+          <button className="rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-60" type="submit" disabled={!currentUser}>Отправить заявку</button>
+          {!currentUser && <p className="text-xs text-rose-700">Войдите, чтобы отправить заявку.</p>}
         </form>
       </section>
     </main>

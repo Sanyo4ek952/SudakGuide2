@@ -1,33 +1,24 @@
 import { listingFeature } from '@/features';
-import { prisma, requireRole } from '@/shared/lib';
+import { prisma, requireCurrentRole } from '@/shared/lib';
 
-export default async function HostEditListingPage({
-  params,
-  searchParams
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const { id } = await params;
-  const query = await searchParams;
-  const hostId = typeof query.hostId === 'string' ? query.hostId : '';
-
-  const roleCheck = await requireRole(hostId, 'HOST');
-  if (!roleCheck.ok) {
+export default async function HostEditListingPage({ params }: { params: Promise<{ id: string }> }) {
+  const access = await requireCurrentRole('HOST');
+  if (!access.ok) {
     return (
       <main className="mx-auto max-w-5xl px-6 py-10">
         <h1 className="text-2xl font-semibold">Редактирование объекта</h1>
-        <p className="mt-2 text-rose-700">{roleCheck.message}</p>
+        <p className="mt-2 text-rose-700">{access.message}</p>
       </main>
     );
   }
 
+  const { id } = await params;
   const listing = await prisma.listing.findUnique({ where: { id } });
 
-  if (!listing) {
+  if (!listing || listing.ownerId !== access.user.id) {
     return (
       <main className="mx-auto max-w-3xl px-6 py-10">
-        <h1 className="text-2xl font-semibold">Объект не найден</h1>
+        <h1 className="text-2xl font-semibold">Объект не найден или нет прав</h1>
       </main>
     );
   }
@@ -38,7 +29,6 @@ export default async function HostEditListingPage({
       <p className="mt-2 text-slate-600">ID: {listing.id}</p>
 
       <form className="mt-6 grid gap-3" action={listingFeature.updateListingDraftAction}>
-        <input type="hidden" name="hostId" value={hostId} />
         <input type="hidden" name="listingId" value={listing.id} />
         <input name="title" defaultValue={listing.title} className="rounded border p-2" required />
         <input name="address" defaultValue={listing.address} className="rounded border p-2" required />
@@ -57,7 +47,6 @@ export default async function HostEditListingPage({
       </form>
 
       <form className="mt-4" action={listingFeature.submitListingForReviewAction}>
-        <input type="hidden" name="hostId" value={hostId} />
         <input type="hidden" name="listingId" value={listing.id} />
         <button className="rounded bg-amber-700 px-4 py-2 text-white" type="submit">
           Отправить на модерацию

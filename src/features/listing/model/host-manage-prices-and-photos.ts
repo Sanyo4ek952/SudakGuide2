@@ -1,10 +1,9 @@
 'use server';
 
 import { z } from 'zod';
-import { prisma } from '@/shared/lib';
+import { prisma, requireCurrentRole } from '@/shared/lib';
 
 const addPriceSchema = z.object({
-  hostId: z.string().min(1),
   listingId: z.string().min(1),
   dateFrom: z.coerce.date(),
   dateTo: z.coerce.date(),
@@ -12,6 +11,11 @@ const addPriceSchema = z.object({
 });
 
 export async function addPricePeriodAction(raw: FormData) {
+  const access = await requireCurrentRole('HOST');
+  if (!access.ok) {
+    return { ok: false, message: access.message } as const;
+  }
+
   const parsed = addPriceSchema.safeParse(Object.fromEntries(raw.entries()));
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten() } as const;
@@ -22,7 +26,7 @@ export async function addPricePeriodAction(raw: FormData) {
   }
 
   const listing = await prisma.listing.findUnique({ where: { id: parsed.data.listingId } });
-  if (!listing || listing.ownerId !== parsed.data.hostId) {
+  if (!listing || listing.ownerId !== access.user.id) {
     return { ok: false, message: 'Недостаточно прав' } as const;
   }
 
@@ -39,11 +43,15 @@ export async function addPricePeriodAction(raw: FormData) {
 }
 
 export async function deletePricePeriodAction(raw: FormData) {
-  const hostId = String(raw.get('hostId') ?? '');
+  const access = await requireCurrentRole('HOST');
+  if (!access.ok) {
+    return { ok: false, message: access.message } as const;
+  }
+
   const pricePeriodId = String(raw.get('pricePeriodId') ?? '');
 
   const period = await prisma.pricePeriod.findUnique({ where: { id: pricePeriodId }, include: { listing: true } });
-  if (!period || period.listing.ownerId !== hostId) {
+  if (!period || period.listing.ownerId !== access.user.id) {
     return { ok: false, message: 'Недостаточно прав' } as const;
   }
 
@@ -52,7 +60,11 @@ export async function deletePricePeriodAction(raw: FormData) {
 }
 
 export async function addPhotoUrlAction(raw: FormData) {
-  const hostId = String(raw.get('hostId') ?? '');
+  const access = await requireCurrentRole('HOST');
+  if (!access.ok) {
+    return { ok: false, message: access.message } as const;
+  }
+
   const listingId = String(raw.get('listingId') ?? '');
   const url = String(raw.get('url') ?? '').trim();
 
@@ -61,7 +73,7 @@ export async function addPhotoUrlAction(raw: FormData) {
   }
 
   const listing = await prisma.listing.findUnique({ where: { id: listingId }, include: { photos: true } });
-  if (!listing || listing.ownerId !== hostId) {
+  if (!listing || listing.ownerId !== access.user.id) {
     return { ok: false, message: 'Недостаточно прав' } as const;
   }
 
@@ -77,11 +89,15 @@ export async function addPhotoUrlAction(raw: FormData) {
 }
 
 export async function removePhotoAction(raw: FormData) {
-  const hostId = String(raw.get('hostId') ?? '');
+  const access = await requireCurrentRole('HOST');
+  if (!access.ok) {
+    return { ok: false, message: access.message } as const;
+  }
+
   const photoId = String(raw.get('photoId') ?? '');
 
   const photo = await prisma.listingPhoto.findUnique({ where: { id: photoId }, include: { listing: true } });
-  if (!photo || photo.listing.ownerId !== hostId) {
+  if (!photo || photo.listing.ownerId !== access.user.id) {
     return { ok: false, message: 'Недостаточно прав' } as const;
   }
 
@@ -90,12 +106,16 @@ export async function removePhotoAction(raw: FormData) {
 }
 
 export async function movePhotoAction(raw: FormData) {
-  const hostId = String(raw.get('hostId') ?? '');
+  const access = await requireCurrentRole('HOST');
+  if (!access.ok) {
+    return { ok: false, message: access.message } as const;
+  }
+
   const photoId = String(raw.get('photoId') ?? '');
   const direction = String(raw.get('direction') ?? 'up');
 
   const photo = await prisma.listingPhoto.findUnique({ where: { id: photoId }, include: { listing: true } });
-  if (!photo || photo.listing.ownerId !== hostId) {
+  if (!photo || photo.listing.ownerId !== access.user.id) {
     return { ok: false, message: 'Недостаточно прав' } as const;
   }
 

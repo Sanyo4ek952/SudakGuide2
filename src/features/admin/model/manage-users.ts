@@ -1,29 +1,27 @@
 'use server';
 
 import { z } from 'zod';
-import { prisma } from '@/shared/lib';
+import { prisma, requireCurrentRole } from '@/shared/lib';
 
 const roleSchema = z.object({
-  adminId: z.string().min(1),
   userId: z.string().min(1),
   role: z.enum(['USER', 'HOST', 'ADMIN'])
 });
 
 const chatSchema = z.object({
-  adminId: z.string().min(1),
   userId: z.string().min(1),
   telegramChatId: z.string().min(1)
 });
 
 export async function setUserRoleAction(raw: FormData) {
+  const access = await requireCurrentRole('ADMIN');
+  if (!access.ok) {
+    return { ok: false, message: access.message } as const;
+  }
+
   const parsed = roleSchema.safeParse(Object.fromEntries(raw.entries()));
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten() } as const;
-  }
-
-  const admin = await prisma.user.findUnique({ where: { id: parsed.data.adminId } });
-  if (!admin || admin.role !== 'ADMIN') {
-    return { ok: false, message: 'Недостаточно прав' } as const;
   }
 
   const updated = await prisma.user.update({
@@ -35,14 +33,14 @@ export async function setUserRoleAction(raw: FormData) {
 }
 
 export async function setHostChatIdAction(raw: FormData) {
+  const access = await requireCurrentRole('ADMIN');
+  if (!access.ok) {
+    return { ok: false, message: access.message } as const;
+  }
+
   const parsed = chatSchema.safeParse(Object.fromEntries(raw.entries()));
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten() } as const;
-  }
-
-  const admin = await prisma.user.findUnique({ where: { id: parsed.data.adminId } });
-  if (!admin || admin.role !== 'ADMIN') {
-    return { ok: false, message: 'Недостаточно прав' } as const;
   }
 
   const host = await prisma.user.findUnique({ where: { id: parsed.data.userId } });

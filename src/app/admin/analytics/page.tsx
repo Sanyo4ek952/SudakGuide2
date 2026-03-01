@@ -1,15 +1,12 @@
-import { prisma, requireRole } from '@/shared/lib';
+import { prisma, requireCurrentRole } from '@/shared/lib';
 
-export default async function AdminAnalyticsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const query = await searchParams;
-  const adminId = typeof query.adminId === 'string' ? query.adminId : '';
-
-  const roleCheck = await requireRole(adminId, 'ADMIN');
-  if (!roleCheck.ok) {
+export default async function AdminAnalyticsPage() {
+  const access = await requireCurrentRole('ADMIN');
+  if (!access.ok) {
     return (
       <main className="mx-auto max-w-5xl px-6 py-10">
         <h1 className="text-2xl font-semibold">Админ: аналитика</h1>
-        <p className="mt-2 text-rose-700">{roleCheck.message}</p>
+        <p className="mt-2 text-rose-700">{access.message}</p>
       </main>
     );
   }

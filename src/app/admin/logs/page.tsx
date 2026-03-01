@@ -1,15 +1,12 @@
-import { prisma, requireRole } from '@/shared/lib';
+import { prisma, requireCurrentRole } from '@/shared/lib';
 
-export default async function AdminLogsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const query = await searchParams;
-  const adminId = typeof query.adminId === 'string' ? query.adminId : '';
-
-  const roleCheck = await requireRole(adminId, 'ADMIN');
-  if (!roleCheck.ok) {
+export default async function AdminLogsPage() {
+  const access = await requireCurrentRole('ADMIN');
+  if (!access.ok) {
     return (
       <main className="mx-auto max-w-6xl px-6 py-10">
         <h1 className="text-2xl font-semibold">Админ: логи</h1>
-        <p className="mt-2 text-rose-700">{roleCheck.message}</p>
+        <p className="mt-2 text-rose-700">{access.message}</p>
       </main>
     );
   }
@@ -24,28 +21,17 @@ export default async function AdminLogsPage({ searchParams }: { searchParams: Pr
     <main className="mx-auto max-w-6xl px-6 py-10">
       <h1 className="text-2xl font-semibold">Админ: логи</h1>
       <p className="mt-2 text-slate-600">MVP: журнал последних заявок как operational log.</p>
-
       <div className="mt-4 overflow-x-auto rounded border bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-100">
             <tr>
-              <th className="p-2 text-left">Дата</th>
-              <th className="p-2 text-left">Booking ID</th>
-              <th className="p-2 text-left">Пользователь</th>
-              <th className="p-2 text-left">Объект</th>
-              <th className="p-2 text-left">Статус</th>
-              <th className="p-2 text-left">Сумма</th>
+              <th className="p-2 text-left">Дата</th><th className="p-2 text-left">Booking ID</th><th className="p-2 text-left">Пользователь</th><th className="p-2 text-left">Объект</th><th className="p-2 text-left">Статус</th><th className="p-2 text-left">Сумма</th>
             </tr>
           </thead>
           <tbody>
             {recentBookings.map((booking) => (
               <tr key={booking.id} className="border-t">
-                <td className="p-2">{booking.createdAt.toISOString()}</td>
-                <td className="p-2">{booking.id}</td>
-                <td className="p-2">{booking.user.email}</td>
-                <td className="p-2">{booking.listing.title}</td>
-                <td className="p-2">{booking.status}</td>
-                <td className="p-2">{booking.totalPrice} ₽</td>
+                <td className="p-2">{booking.createdAt.toISOString()}</td><td className="p-2">{booking.id}</td><td className="p-2">{booking.user.email}</td><td className="p-2">{booking.listing.title}</td><td className="p-2">{booking.status}</td><td className="p-2">{booking.totalPrice} ₽</td>
               </tr>
             ))}
           </tbody>

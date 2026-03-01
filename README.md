@@ -142,7 +142,7 @@ GitHub Actions на pull request выполняет:
 
 ## Назначение HOST и chatId через UI
 
-В MVP это доступно на странице админки `/admin/users` (передайте `?adminId=<ADMIN_USER_ID>`), где можно:
+В MVP это доступно на странице админки `/admin/users` для авторизованного ADMIN, где можно:
 
 - менять роль пользователя (USER/HOST/ADMIN);
 - задавать `telegramChatId` для HOST.
@@ -157,3 +157,8 @@ Headers:
 - `Authorization: Bearer <CRON_SECRET>`
 
 This endpoint marks stale `PENDING` booking requests as `EXPIRED`.
+
+
+## Авторизация и доступ по ролям
+
+Для host/admin/user разделов используется проверка текущей сессии NextAuth и роли пользователя (без query-параметров `hostId/adminId/userId`).
