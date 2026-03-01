@@ -1,9 +1,19 @@
 import { adminFeature } from '@/features';
-import { prisma } from '@/shared/lib';
+import { prisma, requireRole } from '@/shared/lib';
 
 export default async function AdminListingsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const query = await searchParams;
   const adminId = typeof query.adminId === 'string' ? query.adminId : '';
+
+  const roleCheck = await requireRole(adminId, 'ADMIN');
+  if (!roleCheck.ok) {
+    return (
+      <main className="mx-auto max-w-6xl px-6 py-10">
+        <h1 className="text-2xl font-semibold">Админ: модерация объектов</h1>
+        <p className="mt-2 text-rose-700">{roleCheck.message}</p>
+      </main>
+    );
+  }
 
   const listings = await prisma.listing.findMany({
     where: { status: 'PENDING_REVIEW' },

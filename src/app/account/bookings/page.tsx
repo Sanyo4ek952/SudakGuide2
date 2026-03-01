@@ -1,8 +1,18 @@
-import { prisma } from '@/shared/lib';
+import { prisma, requireRole } from '@/shared/lib';
 
 export default async function AccountBookingsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const query = await searchParams;
   const userId = typeof query.userId === 'string' ? query.userId : '';
+
+  const roleCheck = await requireRole(userId, 'USER');
+  if (!roleCheck.ok) {
+    return (
+      <main className="mx-auto max-w-5xl px-6 py-10">
+        <h1 className="text-2xl font-semibold">Мои бронирования</h1>
+        <p className="mt-2 text-rose-700">{roleCheck.message}</p>
+      </main>
+    );
+  }
 
   if (!userId) {
     return (

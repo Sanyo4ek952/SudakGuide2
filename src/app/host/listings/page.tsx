@@ -1,9 +1,19 @@
 import Link from 'next/link';
-import { prisma } from '@/shared/lib';
+import { prisma, requireRole } from '@/shared/lib';
 
 export default async function HostListingsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const query = await searchParams;
   const hostId = typeof query.hostId === 'string' ? query.hostId : '';
+
+  const roleCheck = await requireRole(hostId, 'HOST');
+  if (!roleCheck.ok) {
+    return (
+      <main className="mx-auto max-w-5xl px-6 py-10">
+        <h1 className="text-2xl font-semibold">Мои объекты (Host)</h1>
+        <p className="mt-2 text-rose-700">{roleCheck.message}</p>
+      </main>
+    );
+  }
 
   if (!hostId) {
     return (

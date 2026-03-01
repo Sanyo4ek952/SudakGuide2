@@ -1,6 +1,19 @@
-import { prisma } from '@/shared/lib';
+import { prisma, requireRole } from '@/shared/lib';
 
-export default async function AdminLogsPage() {
+export default async function AdminLogsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const query = await searchParams;
+  const adminId = typeof query.adminId === 'string' ? query.adminId : '';
+
+  const roleCheck = await requireRole(adminId, 'ADMIN');
+  if (!roleCheck.ok) {
+    return (
+      <main className="mx-auto max-w-6xl px-6 py-10">
+        <h1 className="text-2xl font-semibold">Админ: логи</h1>
+        <p className="mt-2 text-rose-700">{roleCheck.message}</p>
+      </main>
+    );
+  }
+
   const recentBookings = await prisma.bookingRequest.findMany({
     orderBy: { createdAt: 'desc' },
     take: 20,
