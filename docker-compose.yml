@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sudakguide2-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sudakguide2
+      POSTGRES_USER: sudak
+      POSTGRES_PASSWORD: sudak
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sudak -d sudakguide2"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  HOST
+  ADMIN
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+  CANCELED
+}
+
+model User {
+  id             String           @id @default(cuid())
+  name           String?
+  email          String           @unique
+  passwordHash   String?
+  role           Role             @default(USER)
+  telegramChatId String?
+  image          String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  ownedListings  Listing[]        @relation("ListingOwner")
+  bookings       BookingRequest[]
+
+  @@index([role])
+}
+
+model Listing {
+  id           String          @id @default(cuid())
+  title        String
+  address      String
+  district     String
+  description  String?
+  guests       Int
+  rooms        Int
+  beds         Int
+  amenities    String[]
+  rules        String?
+  checkInTime  String
+  checkOutTime String
+  status       ListingStatus   @default(DRAFT)
+  ownerId      String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  owner        User            @relation("ListingOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  photos       ListingPhoto[]
+  pricePeriods PricePeriod[]
+  bookings     BookingRequest[]
+
+  @@index([status])
+  @@index([ownerId])
+  @@index([title])
+}
+
+model ListingPhoto {
+  id        String   @id @default(cuid())
+  listingId String
+  url       String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, sortOrder])
+}
+
+model PricePeriod {
+  id            String   @id @default(cuid())
+  listingId     String
+  dateFrom      DateTime
+  dateTo        DateTime
+  pricePerNight Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  listing       Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, dateFrom, dateTo])
+}
+
+model BookingRequest {
+  id         String        @id @default(cuid())
+  listingId  String
+  userId     String
+  dateFrom   DateTime
+  dateTo     DateTime
+  nights     Int
+  totalPrice Int
+  status     BookingStatus @default(PENDING)
+  expiresAt  DateTime
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  listing    Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, dateFrom, dateTo, status])
+  @@index([expiresAt])
+}
