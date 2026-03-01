@@ -33,6 +33,7 @@ export default async function ListingDetailsPage({
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
+      <a href="/listings" className="text-sm text-blue-700">← Назад в каталог</a>
       <h1 className="text-2xl font-semibold">{listing.title}</h1>
       <p className="mt-1 text-slate-600">{listing.address}</p>
       <p className="mt-1 text-slate-600">Район: {listing.district}</p>
@@ -64,7 +65,7 @@ export default async function ListingDetailsPage({
 
         <form className="mt-4 grid gap-3" action={bookingFeature.createBookingRequestAction}>
           <input type="hidden" name="listingId" value={listing.id} />
-          <input type="text" name="userId" placeholder="User ID для MVP" className="rounded border p-2" />
+          <input type="text" name="userId" placeholder="User ID (до полной интеграции с сессией)" className="rounded border p-2" required />
           <input type="date" name="dateFrom" className="rounded border p-2" required />
           <input type="date" name="dateTo" className="rounded border p-2" required />
           <button className="rounded bg-blue-700 px-4 py-2 text-white" type="submit">Отправить заявку</button>

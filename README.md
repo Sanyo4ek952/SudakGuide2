@@ -146,3 +146,14 @@ GitHub Actions на pull request выполняет:
 
 - менять роль пользователя (USER/HOST/ADMIN);
 - задавать `telegramChatId` для HOST.
+
+
+## Expire pending bookings (cron)
+
+Endpoint: `POST /api/cron/expire-bookings`
+
+Headers:
+
+- `Authorization: Bearer <CRON_SECRET>`
+
+This endpoint marks stale `PENDING` booking requests as `EXPIRED`.
