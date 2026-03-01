@@ -1,23 +1,39 @@
 'use client';
 
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signUpSchema, type SignUpInput } from '@/entities/user';
 
-export function SignUpForm() {
+type AuthActionState = { ok: boolean; message?: string };
+
+const initialState: AuthActionState = { ok: false };
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button className="rounded bg-slate-900 px-4 py-2 text-white disabled:opacity-60" type="submit" disabled={pending}>
+      {pending ? 'Регистрируем...' : 'Зарегистрироваться'}
+    </button>
+  );
+}
+
+export function SignUpForm({ action }: { action: (state: unknown, formData: FormData) => Promise<AuthActionState> }) {
+  const [state, formAction] = useActionState(action, initialState);
   const form = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),
     defaultValues: { name: '', email: '', password: '' }
   });
 
   return (
-    <form className="space-y-3" onSubmit={form.handleSubmit(() => undefined)}>
+    <form className="space-y-3" action={formAction}>
       <input className="w-full rounded border p-2" placeholder="Имя" {...form.register('name')} />
       <input className="w-full rounded border p-2" placeholder="Email" {...form.register('email')} />
       <input className="w-full rounded border p-2" type="password" placeholder="Пароль" {...form.register('password')} />
-      <button className="rounded bg-slate-900 px-4 py-2 text-white" type="submit">
-        Зарегистрироваться
-      </button>
+      <SubmitButton />
+      {state.message && <p className={`text-sm ${state.ok ? 'text-emerald-700' : 'text-rose-700'}`}>{state.message}</p>}
     </form>
   );
 }
